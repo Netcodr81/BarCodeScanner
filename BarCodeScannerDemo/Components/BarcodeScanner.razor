@@ -1,0 +1,204 @@
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<div class="barcode-scanner-container">
+    <div class="scanner-controls mb-3">
+        <button class="btn @(IsScanning ? "btn-danger" : "btn-primary")" @onclick="ToggleScanner">
+            @(IsScanning ? "Stop Scanner" : "Start Scanner")
+        </button>
+        <button class="btn btn-secondary" @onclick="ClearScanLog">Clear Log</button>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert-danger mt-2" role="alert">
+                @ErrorMessage
+            </div>
+        }
+    </div>
+
+    <div class="scanner-viewport">
+        <div id="@ScannerId" class="scanner-element"></div>
+        @if (IsScanning)
+        {
+            <div class="scanner-overlay">
+                <div class="scanner-line"></div>
+                <p class="scanner-instructions">Point camera at barcode</p>
+            </div>
+        }
+    </div>
+
+    @if (LastScannedCode != null)
+    {
+        <div class="scanned-result mt-3">
+            <div class="alert alert-success" role="alert">
+                <h5>Barcode Detected!</h5>
+                <p>
+                    <strong>Code:</strong> @LastScannedCode.Code
+                </p>
+                <p>
+                    <strong>Format:</strong> @LastScannedCode.Format
+                </p>
+                <p>
+                    <strong>Time:</strong> @LastScannedCode.Timestamp.ToString("HH:mm:ss")
+                </p>
+            </div>
+        </div>
+    }
+
+    @if (ScannedCodes.Any())
+    {
+        <div class="scan-history mt-4">
+            <h5>Scan History</h5>
+            <div class="list-group">
+                @foreach (var scan in ScannedCodes.Take(5))
+                {
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">@scan.Code</h6>
+                            <small>@scan.Timestamp.ToString("HH:mm:ss")</small>
+                        </div>
+                        <small>Format: @scan.Format</small>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private DotNetObjectReference<BarcodeScanner>? dotNetReference;
+    private string ScannerId = $"scanner-{Guid.NewGuid():N}";
+
+    [Parameter] public EventCallback<ScannedBarcode> OnBarcodeScanned { get; set; }
+
+    public bool IsScanning { get; private set; }
+    public string? ErrorMessage { get; private set; }
+    public ScannedBarcode? LastScannedCode { get; private set; }
+    public List<ScannedBarcode> ScannedCodes { get; private set; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetReference = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("barcodeScanner.initialize", dotNetReference);
+        }
+    }
+
+    private void ClearScanLog()
+    {
+        ScannedCodes = new();
+    }
+
+    private async Task ToggleScanner()
+    {
+        if (IsScanning)
+        {
+            await StopScanner();
+        }
+        else
+        {
+            await StartScanner();
+        }
+    }
+
+    private async Task StartScanner()
+    {
+        try
+        {
+            ErrorMessage = null;
+            var success = await JSRuntime.InvokeAsync<bool>("barcodeScanner.start", ScannerId);
+            if (!success)
+            {
+                ErrorMessage = "Scanner is already running";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to start scanner: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task StopScanner()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("barcodeScanner.stop");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to stop scanner: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnBarcodeDetected(string code, string format)
+    {
+        var scannedBarcode = new ScannedBarcode
+        {
+            Code = code,
+            Format = format,
+            Timestamp = DateTime.Now
+        };
+
+        LastScannedCode = scannedBarcode;
+        ScannedCodes.Insert(0, scannedBarcode);
+
+        // Keep only the last 10 scans
+        if (ScannedCodes.Count > 10)
+        {
+            ScannedCodes.RemoveAt(ScannedCodes.Count - 1);
+        }
+
+        StateHasChanged();
+
+        if (OnBarcodeScanned.HasDelegate)
+        {
+            await OnBarcodeScanned.InvokeAsync(scannedBarcode);
+        }
+    }
+
+    [JSInvokable]
+    public void OnScannerStarted()
+    {
+        IsScanning = true;
+        ErrorMessage = null;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnScannerStopped()
+    {
+        IsScanning = false;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnError(string error)
+    {
+        ErrorMessage = error;
+        IsScanning = false;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (IsScanning)
+        {
+            await StopScanner();
+        }
+
+        dotNetReference?.Dispose();
+    }
+
+    public class ScannedBarcode
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Format { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+
+}
