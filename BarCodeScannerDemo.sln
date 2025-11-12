@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36623.8 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BarCodeScannerDemo", "BarCodeScannerDemo\BarCodeScannerDemo.csproj", "{B0D12F65-B64D-4836-A95E-36CB8CCFC11E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BarCodeScannerApi", "BarCodeScannerApi\BarCodeScannerApi.csproj", "{7EFB5F94-6910-4740-B1BF-A0AEB0957AC4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B0D12F65-B64D-4836-A95E-36CB8CCFC11E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0D12F65-B64D-4836-A95E-36CB8CCFC11E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0D12F65-B64D-4836-A95E-36CB8CCFC11E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EFB5F94-6910-4740-B1BF-A0AEB0957AC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EFB5F94-6910-4740-B1BF-A0AEB0957AC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EFB5F94-6910-4740-B1BF-A0AEB0957AC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EFB5F94-6910-4740-B1BF-A0AEB0957AC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

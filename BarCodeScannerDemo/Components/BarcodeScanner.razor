@@ -1,14 +1,10 @@
+@using BarCodeScannerDemo.Models
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime JSRuntime
 
 <div class="barcode-scanner-container">
     <div class="scanner-controls mb-3">
-        <button class="btn @(IsScanning ? "btn-danger" : "btn-primary")" @onclick="ToggleScanner">
-            @(IsScanning ? "Stop Scanner" : "Start Scanner")
-        </button>
-        <button class="btn btn-secondary" @onclick="ClearScanLog">Clear Log</button>
-
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
             <div class="alert alert-danger mt-2" role="alert">
@@ -27,43 +23,6 @@
             </div>
         }
     </div>
-
-    @if (LastScannedCode != null)
-    {
-        <div class="scanned-result mt-3">
-            <div class="alert alert-success" role="alert">
-                <h5>Barcode Detected!</h5>
-                <p>
-                    <strong>Code:</strong> @LastScannedCode.Code
-                </p>
-                <p>
-                    <strong>Format:</strong> @LastScannedCode.Format
-                </p>
-                <p>
-                    <strong>Time:</strong> @LastScannedCode.Timestamp.ToString("HH:mm:ss")
-                </p>
-            </div>
-        </div>
-    }
-
-    @if (ScannedCodes.Any())
-    {
-        <div class="scan-history mt-4">
-            <h5>Scan History</h5>
-            <div class="list-group">
-                @foreach (var scan in ScannedCodes.Take(5))
-                {
-                    <div class="list-group-item">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">@scan.Code</h6>
-                            <small>@scan.Timestamp.ToString("HH:mm:ss")</small>
-                        </div>
-                        <small>Format: @scan.Format</small>
-                    </div>
-                }
-            </div>
-        </div>
-    }
 </div>
 
 @code {
@@ -71,11 +30,11 @@
     private string ScannerId = $"scanner-{Guid.NewGuid():N}";
 
     [Parameter] public EventCallback<ScannedBarcode> OnBarcodeScanned { get; set; }
+    [Parameter] public EventCallback OnScanningStart { get; set; }
+    [Parameter] public EventCallback OnScanningStopped { get; set; }
 
     public bool IsScanning { get; private set; }
     public string? ErrorMessage { get; private set; }
-    public ScannedBarcode? LastScannedCode { get; private set; }
-    public List<ScannedBarcode> ScannedCodes { get; private set; } = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -86,24 +45,7 @@
         }
     }
 
-    private void ClearScanLog()
-    {
-        ScannedCodes = new();
-    }
-
-    private async Task ToggleScanner()
-    {
-        if (IsScanning)
-        {
-            await StopScanner();
-        }
-        else
-        {
-            await StartScanner();
-        }
-    }
-
-    private async Task StartScanner()
+    public async Task StartScanner()
     {
         try
         {
@@ -121,7 +63,7 @@
         }
     }
 
-    private async Task StopScanner()
+    public async Task StopScanner()
     {
         try
         {
@@ -144,20 +86,18 @@
             Timestamp = DateTime.Now
         };
 
-        LastScannedCode = scannedBarcode;
-        ScannedCodes.Insert(0, scannedBarcode);
-
-        // Keep only the last 10 scans
-        if (ScannedCodes.Count > 10)
-        {
-            ScannedCodes.RemoveAt(ScannedCodes.Count - 1);
-        }
-
+        await StopScanner();
+        
         StateHasChanged();
 
         if (OnBarcodeScanned.HasDelegate)
         {
             await OnBarcodeScanned.InvokeAsync(scannedBarcode);
+        }
+
+        if (OnScanningStopped.HasDelegate)
+        {
+            await OnScanningStopped.InvokeAsync();
         }
     }
 
@@ -170,9 +110,14 @@
     }
 
     [JSInvokable]
-    public void OnScannerStopped()
+    public async Task OnScannerStopped()
     {
         IsScanning = false;
+
+        if (OnScanningStopped.HasDelegate)
+        {
+            await OnScanningStopped.InvokeAsync();
+        }
         StateHasChanged();
     }
 
@@ -186,19 +131,17 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (IsScanning)
+        if (IsScanning && OnScanningStopped.HasDelegate)
+        {
+            await StopScanner();
+            await OnScanningStopped.InvokeAsync();
+        }
+        else if (IsScanning)
         {
             await StopScanner();
         }
 
         dotNetReference?.Dispose();
-    }
-
-    public class ScannedBarcode
-    {
-        public string Code { get; set; } = string.Empty;
-        public string Format { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
     }
 
 }

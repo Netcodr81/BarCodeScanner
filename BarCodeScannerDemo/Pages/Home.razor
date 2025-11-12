@@ -1,5 +1,8 @@
 ﻿@page "/"
 @using BarCodeScannerDemo.Components
+@using BarCodeScannerDemo.Models
+
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Barcode Scanner Demo</PageTitle>
 
@@ -15,87 +18,134 @@
 
     <div class="row">
         <div class="col-12">
-            <BarcodeScanner OnBarcodeScanned="OnBarcodeScanned"/>
+            <div class="justify-content-center d-flex gap-3">
+            <button class="btn @(IsScanning ? "btn-danger" : "btn-primary")" @onclick="ToggleScanner">
+                @(IsScanning ? "Stop Scanner" : "Start Scanner")
+            </button>
+            <button class="btn btn-secondary" @onclick="ClearScanLog">Clear Log</button>
+            </div>
+            <BarcodeScanner @ref="barcodeScannerRef" OnBarcodeScanned="OnBarcodeScanned"/>
         </div>
     </div>
 </div>
-@if (recentScans.Any())
+
+@if (LastScannedCode != null)
 {
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Recent Scans</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Format</th>
-                                <th>Time</th>
-                                <th>Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach (var scan in recentScans.Take(10))
-                            {
+    <div class="scanned-result mt-3">
+        <div class="alert alert-success" role="alert">
+            <h5>Barcode Detected!</h5>
+            <p>
+                <strong>Code:</strong> @LastScannedCode.Code
+            </p>
+            <p>
+                <strong>Format:</strong> @LastScannedCode.Format
+            </p>
+            <p>
+                <strong>Time:</strong> @LastScannedCode.Timestamp?.ToString("HH:mm:ss")
+            </p>
+        </div>
+    </div>
+
+    @if (ScannedCodes.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Recent Scans</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
                                 <tr>
-                                    <td>
-                                        <code>@scan.Code</code>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">@scan.Format</span>
-                                    </td>
-                                    <td>@scan.Timestamp.ToString("HH:mm:ss")</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => CopyToClipboard(scan.Code)">
-                                            Copy
-                                        </button>
-                                    </td>
+                                    <th>Code</th>
+                                    <th>Format</th>
+                                    <th>Time</th>
+                                    <th>Actions</th>
                                 </tr>
-                            }
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                @foreach (var scan in ScannedCodes.Take(10))
+                                {
+                                    <tr>
+                                        <td>
+                                            <code>@scan.Code</code>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">@scan.Format</span>
+                                        </td>
+                                        <td>@scan.Timestamp?.ToString("HH:mm:ss") </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    @onclick="() => CopyToClipboard(scan.Code)">
+                                                Copy
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-}
-
-
-@code {
-    private List<BarcodeScanner.ScannedBarcode> recentScans = new();
-
-    private async Task OnBarcodeScanned(BarcodeScanner.ScannedBarcode barcode)
-    {
-        recentScans.Insert(0, barcode);
-
-        // Keep only the last 20 scans
-        if (recentScans.Count > 20)
-        {
-            recentScans.RemoveAt(recentScans.Count - 1);
-        }
-
-        StateHasChanged();
     }
 
-    private async Task CopyToClipboard(string text)
-    {
-        // Note: Clipboard API requires HTTPS in production
-        try
+    @code {
+        public ScannedBarcode? LastScannedCode { get; private set; }
+        public List<ScannedBarcode> ScannedCodes { get; private set; } = new();
+        private BarcodeScanner? barcodeScannerRef;
+        private bool IsScanning { get; set; }
+
+        private async Task OnBarcodeScanned(ScannedBarcode barcode)
         {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            ScannedCodes.Insert(0, barcode);
+            LastScannedCode = barcode;
+
+            // Keep only the last 20 scans
+            if (ScannedCodes.Count > 20)
+            {
+                ScannedCodes.RemoveAt(ScannedCodes.Count - 1);
+            }
+
+            StateHasChanged();
         }
-        catch
+
+        private async Task ToggleScanner()
         {
-            // Fallback for browsers that don't support clipboard API
-            // You could show a modal with the text to copy manually
+            IsScanning = !IsScanning;
+
+            if (IsScanning)
+            {
+                await barcodeScannerRef?.StartScanner()!;
+            }
+            else
+            {
+                await barcodeScannerRef?.StopScanner()!;
+            }
         }
+
+        private void ClearScanLog()
+        {
+            ScannedCodes.Clear();
+            LastScannedCode = null;
+        }
+
+        private async Task CopyToClipboard(string text)
+        {
+            // Note: Clipboard API requires HTTPS in production
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            }
+            catch
+            {
+                // Fallback for browsers that don't support clipboard API
+                // You could show a modal with the text to copy manually
+            }
+        }
+
     }
-
 }
-
-@inject IJSRuntime JSRuntime
