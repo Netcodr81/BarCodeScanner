@@ -20,19 +20,20 @@
 
         <div class="flex justify-center gap-3 mb-6">
             <button type="button"
-                    class="@(IsScanning ? "text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" : "text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800") font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+                    class="@(IsScanning ? "text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" : "text-white bg-ocio-blue-700 hover:bg-ocio-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800") font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
                     @onclick="ToggleScanner">
                 @(IsScanning ? "Stop Scanner" : "Start Scanner")
-            </button>
-            <button type="button"
-                    class="text-white bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-                    @onclick="ClearScanLog">
-                Clear Log
             </button>
         </div>
 
         <BarcodeScanner @ref="barcodeScannerRef" OnBarcodeScanned="OnBarcodeScanned"
                         OnScanningStopped="() => IsScanning = false" OnScanningStart="() => IsScanning = true"/>
+        <div class="text-center mt-4">
+            @if (IsScanning)
+            {
+                <p class="text-2xl font-bold text-gray-600 dark:text-white">Scanning barcode...</p>
+            }
+        </div>
     </div>
 </div>
 
@@ -40,16 +41,16 @@
 {
   <div class="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h5 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Scans</h5>
+            <div class="px-6 bg-ocio-blue-600 text-white py-4 border-b border-b-ocio-blue-700 dark:border-gray-700">
+                <h5 class="text-xl font-semibold  text-white">Scan Results</h5>
             </div>
             <div class="p-6">
                 <div class="relative overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                         <thead
-                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            class="text-xs uppercase bg-ocio-blue-400 text-white ">
                         <tr>
-                            <th></th>
+                            <th scope="col" class="px-6 py-3"></th>
                             <th scope="col" class="px-6 py-3">Title</th>
                             <th scope="col" class="px-6 py-3">Brand</th>
                             <th scope="col" class="px-6 py-3">Description</th>
@@ -65,7 +66,7 @@
                                 <td>
                                     @if (product.Images.Any())
                                     {
-                                        <img src="@product.Images.FirstOrDefault()"  alt="@product.Title"/>
+                                        <img  class="h-12 w-12 object-contain bg-transparent mix-blend-multiply dark:mix-blend-lighten" src="@product.Images.FirstOrDefault()"  alt="@product.Title"/>
                                     }
                                 </td>
                                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
@@ -109,65 +110,8 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
     </div>
 }
 
-@if (ScannedCodes.Any())
-{
-    <div class="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h5 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Scans</h5>
-            </div>
-            <div class="p-6">
-                <div class="relative overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead
-                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                        <tr>
-                            <th scope="col" class="px-6 py-3">Title</th>
-                            <th scope="col" class="px-6 py-3">Brand</th>
-                            <th scope="col" class="px-6 py-3">Description</th>
-                            <th scope="col" class="px-6 py-3">Category</th>
-                            <th scope="col" class="px-6 py-3">EAN</th>
-                            <th scope="col" class="px-6 py-3">UPC</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var scan in ScannedCodes.Take(10))
-                        {
-                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                    @scan.Title
-                                </td>
-                                <td class="px-6 py-4">
-                                    @scan.Brand
-                                </td>
-                                <td class="px-6 py-4">
-                                    @scan.Description
-                                </td>
-                                <td class="px-6 py-4">
-                                    @scan.Category
-                                </td>
-                                <td class="px-6 py-4">
-                                    <code
-                                        class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">@scan.EAN</code>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <code
-                                        class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">@scan.UPC</code>
-                                </td>
-
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
 @code {
-    public ScannedBarcode? LastScannedCode { get; private set; }
-    public List<Item> ScannedCodes { get; private set; } = new();
+    
     private BarcodeScanner? barcodeScannerRef;
     private BarcodeResponse? BarcodeResponse { get; set; }
     private bool IsScanning { get; set; }
@@ -184,12 +128,7 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
         {
             BarcodeResponse = await response.Content.ReadFromJsonAsync<BarcodeResponse>();
         }
-
-        if (BarcodeResponse?.Items?.Any() == true)
-        {
-            ScannedCodes.AddRange(BarcodeResponse.Items);
-        }
-
+    
         StateHasChanged();
     }
 
@@ -199,6 +138,7 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
 
         if (IsScanning)
         {
+            BarcodeResponse = null;
             await barcodeScannerRef?.StartScanner()!;
         }
         else
@@ -206,25 +146,5 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
             await barcodeScannerRef?.StopScanner()!;
         }
     }
-
-    private void ClearScanLog()
-    {
-        ScannedCodes.Clear();
-        LastScannedCode = null;
-    }
-
-    private async Task CopyToClipboard(string text)
-    {
-        // Note: Clipboard API requires HTTPS in production
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
-        }
-        catch
-        {
-            // Fallback for browsers that don't support clipboard API
-            // You could show a modal with the text to copy manually
-        }
-    }
-
+   
 }
