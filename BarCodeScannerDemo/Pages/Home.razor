@@ -1,8 +1,10 @@
 ﻿@page "/"
 @using BarCodeScannerDemo.Components
 @using BarCodeScannerDemo.Models
+@using SharedKernel.Models
 
 @inject IJSRuntime JSRuntime
+@inject IHttpClientFactory httpClientFactory
 
 <PageTitle>Barcode Scanner Demo</PageTitle>
 
@@ -19,133 +21,180 @@
     <div class="row">
         <div class="col-12">
             <div class="justify-content-center d-flex gap-3">
-            <button class="btn @(IsScanning ? "btn-danger" : "btn-primary")" @onclick="ToggleScanner">
-                @(IsScanning ? "Stop Scanner" : "Start Scanner")
-            </button>
-            <button class="btn btn-secondary" @onclick="ClearScanLog">Clear Log</button>
+                <button class="btn @(IsScanning ? "btn-danger" : "btn-primary")" @onclick="ToggleScanner">
+                    @(IsScanning ? "Stop Scanner" : "Start Scanner")
+                </button>
+                <button class="btn btn-secondary" @onclick="ClearScanLog">Clear Log</button>
             </div>
             <BarcodeScanner @ref="barcodeScannerRef" OnBarcodeScanned="OnBarcodeScanned"/>
         </div>
     </div>
 </div>
 
-@if (LastScannedCode != null)
+@if (BarcodeResponse != null && BarcodeResponse.Items.Any())
 {
     <div class="scanned-result mt-3">
         <div class="alert alert-success" role="alert">
-            <h5>Barcode Detected!</h5>
-            <p>
-                <strong>Code:</strong> @LastScannedCode.Code
-            </p>
-            <p>
-                <strong>Format:</strong> @LastScannedCode.Format
-            </p>
-            <p>
-                <strong>Time:</strong> @LastScannedCode.Timestamp?.ToString("HH:mm:ss")
-            </p>
+            @foreach (var product in BarcodeResponse.Items)
+            {
+                <h5>Product Details</h5>
+                <p>
+                    <span class="fw-bold">Title</span> @product.Title
+                </p>
+                <p>
+                    <span class="fw-bold">Brand</span> @product.Brand
+                </p>
+                <p>
+                    <span class="fw-bold">Description</span> @product.Description
+                </p>
+                <p>
+                    <span class="fw-bold">Category</span> @product.Category
+                </p>
+                <p>
+                    <span class="fw-bold">EAN</span> @product.EAN
+                </p>
+                <p>
+                    <span class="fw-bold">UPC</span> @product.UPC
+                </p>
+                <p>
+                    <span class="fw-bold">Model</span> @product.Model
+                </p>
+                <p>
+                    <span class="fw-bold">Color</span> @product.Color
+                </p>
+                <p>
+                    <span class="fw-bold">Size</span> @product.Size
+                </p>
+                <p>
+                    <span class="fw-bold">Dimension</span> @product.Dimension
+                </p>
+                <img src="@product.Images.FirstOrDefault()?.ToString()" alt="Product Image" style="max-width: 200px;"/>
+                <hr/>
+            }
         </div>
     </div>
+}
+else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
+{
+    <div class="scanned-result mt-3">
+        <div class="alert alert-warning" role="alert">
+            No product information found for the scanned barcode.
+        </div>
+    </div>
+}
 
-    @if (ScannedCodes.Any())
-    {
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Recent Scans</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
+@if (ScannedCodes.Any())
+{
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Scans</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Format</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var scan in ScannedCodes.Take(10))
+                            {
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Format</th>
-                                    <th>Time</th>
-                                    <th>Actions</th>
+                                    <td>
+                                        <code>@scan.Code</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">@scan.Format</span>
+                                    </td>
+                                    <td>@scan.Timestamp?.ToString("HH:mm:ss") </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="() => CopyToClipboard(scan.Code.ToString())">
+                                            Copy
+                                        </button>
+                                    </td>
                                 </tr>
-                                </thead>
-                                <tbody>
-                                @foreach (var scan in ScannedCodes.Take(10))
-                                {
-                                    <tr>
-                                        <td>
-                                            <code>@scan.Code</code>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-primary">@scan.Format</span>
-                                        </td>
-                                        <td>@scan.Timestamp?.ToString("HH:mm:ss") </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary"
-                                                    @onclick="() => CopyToClipboard(scan.Code)">
-                                                Copy
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                                </tbody>
-                            </table>
-                        </div>
+                            }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+}
+
+@code {
+    public ScannedBarcode? LastScannedCode { get; private set; }
+    public List<ScannedBarcode> ScannedCodes { get; private set; } = new();
+    private BarcodeScanner? barcodeScannerRef;
+    private BarcodeResponse? BarcodeResponse { get; set; }
+    private bool IsScanning { get; set; }
+
+    private async Task OnBarcodeScanned(ScannedBarcode barcode)
+    {
+        var apiClient = httpClientFactory.CreateClient(Constants.ProductsApiClient);
+
+        long.TryParse(barcode.Code, out var upc);
+        var response = await apiClient.GetAsync($"api/products?upc={upc}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            BarcodeResponse = await response.Content.ReadFromJsonAsync<BarcodeResponse>();
+        }
+
+        ScannedCodes.Insert(0, barcode);
+        LastScannedCode = barcode;
+
+        // Keep only the last 20 scans
+        if (ScannedCodes.Count > 20)
+        {
+            ScannedCodes.RemoveAt(ScannedCodes.Count - 1);
+        }
+
+        StateHasChanged();
     }
 
-    @code {
-        public ScannedBarcode? LastScannedCode { get; private set; }
-        public List<ScannedBarcode> ScannedCodes { get; private set; } = new();
-        private BarcodeScanner? barcodeScannerRef;
-        private bool IsScanning { get; set; }
+    private async Task ToggleScanner()
+    {
+        IsScanning = !IsScanning;
 
-        private async Task OnBarcodeScanned(ScannedBarcode barcode)
+        if (IsScanning)
         {
-            ScannedCodes.Insert(0, barcode);
-            LastScannedCode = barcode;
-
-            // Keep only the last 20 scans
-            if (ScannedCodes.Count > 20)
-            {
-                ScannedCodes.RemoveAt(ScannedCodes.Count - 1);
-            }
-
-            StateHasChanged();
+            await barcodeScannerRef?.StartScanner()!;
         }
-
-        private async Task ToggleScanner()
+        else
         {
-            IsScanning = !IsScanning;
-
-            if (IsScanning)
-            {
-                await barcodeScannerRef?.StartScanner()!;
-            }
-            else
-            {
-                await barcodeScannerRef?.StopScanner()!;
-            }
+            await barcodeScannerRef?.StopScanner()!;
         }
-
-        private void ClearScanLog()
-        {
-            ScannedCodes.Clear();
-            LastScannedCode = null;
-        }
-
-        private async Task CopyToClipboard(string text)
-        {
-            // Note: Clipboard API requires HTTPS in production
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
-            }
-            catch
-            {
-                // Fallback for browsers that don't support clipboard API
-                // You could show a modal with the text to copy manually
-            }
-        }
-
     }
+
+    private void ClearScanLog()
+    {
+        ScannedCodes.Clear();
+        LastScannedCode = null;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        // Note: Clipboard API requires HTTPS in production
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+        catch
+        {
+            // Fallback for browsers that don't support clipboard API
+            // You could show a modal with the text to copy manually
+        }
+    }
+
+}
+
 }

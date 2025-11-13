@@ -1,5 +1,5 @@
 ﻿using BarCodeScannerApi.Data.Context;
-using BarCodeScannerApi.Data.Models;
+using SharedKernel.Models;
 
 namespace BarCodeScannerApi.Data;
 

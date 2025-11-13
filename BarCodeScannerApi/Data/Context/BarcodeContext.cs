@@ -1,5 +1,5 @@
-﻿using BarCodeScannerApi.Data.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SharedKernel.Models;
 
 namespace BarCodeScannerApi.Data.Context;
 

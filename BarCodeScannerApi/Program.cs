@@ -1,10 +1,10 @@
 using BarCodeScannerApi;
 using BarCodeScannerApi.Data;
 using BarCodeScannerApi.Data.Context;
-using BarCodeScannerApi.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using SharedKernel.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +26,8 @@ builder.Services.AddHttpClient(ConfigurationConstants.BarCodeApiClient, client =
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddCors();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -34,6 +36,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference(options => { options.WithTheme(ScalarTheme.Moon); });
 }
+
+app.UseCors(options =>
+{
+    options.AllowAnyHeader();
+    options.AllowAnyOrigin();
+});
 
 app.MapGet("/api/products", async Task<IResult> (
         IDbContextFactory<BarcodeContext> contextFactory,
