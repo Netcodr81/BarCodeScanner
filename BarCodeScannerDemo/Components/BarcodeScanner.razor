@@ -7,8 +7,8 @@
     <div class="scanner-controls mb-3">
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            <div class="alert alert-danger mt-2" role="alert">
-                @ErrorMessage
+            <div class="p-4 mb-4 text-red-800 border border-red-300 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800" role="alert">
+                <span class="font-medium">Error!</span> @ErrorMessage
             </div>
         }
     </div>

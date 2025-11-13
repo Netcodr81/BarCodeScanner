@@ -5,125 +5,160 @@
 
 @inject IJSRuntime JSRuntime
 @inject IHttpClientFactory httpClientFactory
+@inherits BarCodeScannerDemo.Pages.Common.FlowbitePage
 
 <PageTitle>Barcode Scanner Demo</PageTitle>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="text-center mb-4">📱 Barcode Scanner Demo</h1>
-            <p class="text-center text-muted mb-4">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="py-8">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">📱 Barcode Scanner Demo</h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">
                 Scan various barcode formats using your device camera
             </p>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="justify-content-center d-flex gap-3">
-                <button class="btn @(IsScanning ? "btn-danger" : "btn-primary")" @onclick="ToggleScanner">
-                    @(IsScanning ? "Stop Scanner" : "Start Scanner")
-                </button>
-                <button class="btn btn-secondary" @onclick="ClearScanLog">Clear Log</button>
-            </div>
-            <BarcodeScanner @ref="barcodeScannerRef" OnBarcodeScanned="OnBarcodeScanned"/>
+        <div class="flex justify-center gap-3 mb-6">
+            <button type="button"
+                    class="@(IsScanning ? "text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" : "text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800") font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+                    @onclick="ToggleScanner">
+                @(IsScanning ? "Stop Scanner" : "Start Scanner")
+            </button>
+            <button type="button"
+                    class="text-white bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+                    @onclick="ClearScanLog">
+                Clear Log
+            </button>
         </div>
+
+        <BarcodeScanner @ref="barcodeScannerRef" OnBarcodeScanned="OnBarcodeScanned"
+                        OnScanningStopped="() => IsScanning = false" OnScanningStart="() => IsScanning = true"/>
     </div>
 </div>
 
 @if (BarcodeResponse != null && BarcodeResponse.Items.Any())
 {
-    <div class="scanned-result mt-3">
-        <div class="alert alert-success" role="alert">
-            @foreach (var product in BarcodeResponse.Items)
-            {
-                <h5>Product Details</h5>
-                <p>
-                    <span class="fw-bold">Title</span> @product.Title
-                </p>
-                <p>
-                    <span class="fw-bold">Brand</span> @product.Brand
-                </p>
-                <p>
-                    <span class="fw-bold">Description</span> @product.Description
-                </p>
-                <p>
-                    <span class="fw-bold">Category</span> @product.Category
-                </p>
-                <p>
-                    <span class="fw-bold">EAN</span> @product.EAN
-                </p>
-                <p>
-                    <span class="fw-bold">UPC</span> @product.UPC
-                </p>
-                <p>
-                    <span class="fw-bold">Model</span> @product.Model
-                </p>
-                <p>
-                    <span class="fw-bold">Color</span> @product.Color
-                </p>
-                <p>
-                    <span class="fw-bold">Size</span> @product.Size
-                </p>
-                <p>
-                    <span class="fw-bold">Dimension</span> @product.Dimension
-                </p>
-                <img src="@product.Images.FirstOrDefault()?.ToString()" alt="Product Image" style="max-width: 200px;"/>
-                <hr/>
-            }
+  <div class="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h5 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Scans</h5>
+            </div>
+            <div class="p-6">
+                <div class="relative overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead
+                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th></th>
+                            <th scope="col" class="px-6 py-3">Title</th>
+                            <th scope="col" class="px-6 py-3">Brand</th>
+                            <th scope="col" class="px-6 py-3">Description</th>
+                            <th scope="col" class="px-6 py-3">Category</th>
+                            <th scope="col" class="px-6 py-3">EAN</th>
+                            <th scope="col" class="px-6 py-3">UPC</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var product in BarcodeResponse.Items)
+                        {
+                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td>
+                                    @if (product.Images.Any())
+                                    {
+                                        <img src="@product.Images.FirstOrDefault()"  alt="@product.Title"/>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                    @product.Title
+                                </td>
+                                <td class="px-6 py-4">
+                                    @product.Brand
+                                </td>
+                                <td class="px-6 py-4">
+                                    @product.Description
+                                </td>
+                                <td class="px-6 py-4">
+                                    @product.Category
+                                </td>
+                                <td class="px-6 py-4">
+                                    <code
+                                        class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">@product.EAN</code>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <code
+                                        class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">@product.UPC</code>
+                                </td>
+
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 }
 else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
 {
-    <div class="scanned-result mt-3">
-        <div class="alert alert-warning" role="alert">
-            No product information found for the scanned barcode.
+    <div class="scanned-result mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+            class="p-4 mb-4 text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300 dark:border-yellow-800"
+            role="alert">
+            <span class="font-medium">No results!</span> No product information found for the scanned barcode.
         </div>
     </div>
 }
 
 @if (ScannedCodes.Any())
 {
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Recent Scans</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Format</th>
-                                <th>Time</th>
-                                <th>Actions</th>
+    <div class="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h5 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Scans</h5>
+            </div>
+            <div class="p-6">
+                <div class="relative overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead
+                            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Title</th>
+                            <th scope="col" class="px-6 py-3">Brand</th>
+                            <th scope="col" class="px-6 py-3">Description</th>
+                            <th scope="col" class="px-6 py-3">Category</th>
+                            <th scope="col" class="px-6 py-3">EAN</th>
+                            <th scope="col" class="px-6 py-3">UPC</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var scan in ScannedCodes.Take(10))
+                        {
+                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                    @scan.Title
+                                </td>
+                                <td class="px-6 py-4">
+                                    @scan.Brand
+                                </td>
+                                <td class="px-6 py-4">
+                                    @scan.Description
+                                </td>
+                                <td class="px-6 py-4">
+                                    @scan.Category
+                                </td>
+                                <td class="px-6 py-4">
+                                    <code
+                                        class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">@scan.EAN</code>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <code
+                                        class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">@scan.UPC</code>
+                                </td>
+
                             </tr>
-                            </thead>
-                            <tbody>
-                            @foreach (var scan in ScannedCodes.Take(10))
-                            {
-                                <tr>
-                                    <td>
-                                        <code>@scan.Code</code>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">@scan.Format</span>
-                                    </td>
-                                    <td>@scan.Timestamp?.ToString("HH:mm:ss") </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary"
-                                                @onclick="() => CopyToClipboard(scan.Code.ToString())">
-                                            Copy
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
+                        }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -132,7 +167,7 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
 
 @code {
     public ScannedBarcode? LastScannedCode { get; private set; }
-    public List<ScannedBarcode> ScannedCodes { get; private set; } = new();
+    public List<Item> ScannedCodes { get; private set; } = new();
     private BarcodeScanner? barcodeScannerRef;
     private BarcodeResponse? BarcodeResponse { get; set; }
     private bool IsScanning { get; set; }
@@ -142,6 +177,7 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
         var apiClient = httpClientFactory.CreateClient(Constants.ProductsApiClient);
 
         long.TryParse(barcode.Code, out var upc);
+
         var response = await apiClient.GetAsync($"api/products?upc={upc}");
 
         if (response.IsSuccessStatusCode)
@@ -149,13 +185,9 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
             BarcodeResponse = await response.Content.ReadFromJsonAsync<BarcodeResponse>();
         }
 
-        ScannedCodes.Insert(0, barcode);
-        LastScannedCode = barcode;
-
-        // Keep only the last 20 scans
-        if (ScannedCodes.Count > 20)
+        if (BarcodeResponse?.Items?.Any() == true)
         {
-            ScannedCodes.RemoveAt(ScannedCodes.Count - 1);
+            ScannedCodes.AddRange(BarcodeResponse.Items);
         }
 
         StateHasChanged();
@@ -194,7 +226,5 @@ else if (BarcodeResponse != null && !BarcodeResponse.Items.Any())
             // You could show a modal with the text to copy manually
         }
     }
-
-}
 
 }

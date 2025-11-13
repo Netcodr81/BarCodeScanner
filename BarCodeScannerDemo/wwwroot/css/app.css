@@ -1,44 +1,30 @@
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    @apply bg-gray-50 dark:bg-gray-900;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
 }
 
 h1:focus {
     outline: none;
 }
 
-a, .btn-link {
-    color: #0071c1;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-.content {
-    padding-top: 1.1rem;
-}
-
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    @apply ring-2 ring-green-500;
 }
 
 .invalid {
-    outline: 1px solid red;
+    @apply ring-2 ring-red-500;
 }
 
 .validation-message {
-    color: red;
+    @apply text-red-600 text-sm mt-1;
 }
 
 #blazor-error-ui {
     color-scheme: light only;
-    background: lightyellow;
+    background: #fef3c7;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
@@ -48,6 +34,7 @@ a, .btn-link {
     position: fixed;
     width: 100%;
     z-index: 1000;
+    color: #92400e;
 }
 
     #blazor-error-ui .dismiss {
@@ -77,14 +64,14 @@ a, .btn-link {
 
     .loading-progress circle {
         fill: none;
-        stroke: #e0e0e0;
+        stroke: #e5e7eb;
         stroke-width: 0.6rem;
         transform-origin: 50% 50%;
         transform: rotate(-90deg);
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: #3b82f6;
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -101,14 +88,5 @@ a, .btn-link {
     }
 
 code {
-    color: #c02d76;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-    text-align: start;
+    @apply text-pink-600 bg-gray-100 px-1 py-0.5 rounded;
 }
