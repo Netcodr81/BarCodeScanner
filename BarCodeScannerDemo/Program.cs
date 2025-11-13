@@ -1,4 +1,5 @@
 using BarCodeScannerDemo;
+using BarCodeScannerDemo.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,5 +17,7 @@ builder.Services.AddHttpClient(Constants.ProductsApiClient, client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+
+builder.Services.AddScoped<IFlowbiteService, FlowbiteService>();
 
 await builder.Build().RunAsync();
